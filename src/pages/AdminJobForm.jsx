@@ -1,6 +1,6 @@
 import { use } from 'react';
-import AuthContext from '../context/AuthContext';
 import Swal from 'sweetalert2';
+import AuthContext from '../context/AuthContext';
 
 const AdminJobForm = () => {
   const { user } = use(AuthContext);
@@ -24,7 +24,7 @@ const AdminJobForm = () => {
     console.log(newJob);
 
     // send job data to server
-    fetch(`http://localhost:5000/jobs`, {
+    fetch(`http://localhost:5000/jobs/add`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -33,9 +33,9 @@ const AdminJobForm = () => {
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log(data);
+        // console.log(data);
         if (data.insertedId) {
-          Swal.fire('new job created successfully');
+          Swal.fire('Add job succesfully');
         }
       });
   };
@@ -47,29 +47,15 @@ const AdminJobForm = () => {
           <fieldset className="fieldset">
             {/* title field */}
             <label className="label">Title</label>
-            <input
-              name="title"
-              type="text"
-              className="input"
-              placeholder="Title"
-            />
+            <input name="title" type="text" className="input" placeholder="Title" />
 
             {/* location field */}
             <label className="label">Location</label>
-            <input
-              name="location"
-              type="text"
-              className="input"
-              placeholder="Location"
-            />
+            <input name="location" type="text" className="input" placeholder="Location" />
 
             {/* date field */}
             <label className="label">Application Deadline</label>
-            <input
-              name="applicationDeadline"
-              type="date"
-              className="input input-bordered"
-            />
+            <input name="applicationDeadline" type="date" className="input input-bordered" />
 
             {/* job type field */}
             <label className="label">Job Type</label>
@@ -81,11 +67,7 @@ const AdminJobForm = () => {
 
             {/* category field */}
             <label className="label">Category</label>
-            <select
-              name="category"
-              defaultValue="Engineering"
-              className="select"
-            >
+            <select name="category" defaultValue="Engineering" className="select">
               <option>Engineering</option>
               <option>Finance</option>
               <option>Marketing</option>
@@ -101,48 +83,23 @@ const AdminJobForm = () => {
 
             {/* salary min field */}
             <label className="label">Salary Min</label>
-            <input
-              name="min"
-              type="number"
-              className="input"
-              placeholder="Salary Min"
-            />
+            <input name="min" type="number" className="input" placeholder="Salary Min" />
 
             {/* salary max field */}
             <label className="label">Salary Max</label>
-            <input
-              name="max"
-              type="number"
-              className="input"
-              placeholder="Salary Max"
-            />
+            <input name="max" type="number" className="input" placeholder="Salary Max" />
 
             {/* company field */}
             <label className="label">Company</label>
-            <input
-              name="company"
-              type="text"
-              className="input"
-              placeholder="Company"
-            />
+            <input name="company" type="text" className="input" placeholder="Company" />
 
             {/* logo url field */}
             <label className="label">Company Logo</label>
-            <input
-              name="company_logo"
-              type="text"
-              className="input"
-              placeholder="Company Logo"
-            />
+            <input name="company_logo" type="text" className="input" placeholder="Company Logo" />
 
             {/* status field */}
             <label className="label">Status</label>
-            <input
-              name="status"
-              type="text"
-              className="input"
-              placeholder="Status"
-            />
+            <input name="status" type="text" className="input" placeholder="Status" />
 
             {/* hr name field */}
             <label className="label">HR Name</label>
@@ -166,11 +123,7 @@ const AdminJobForm = () => {
 
             {/* description field */}
             <label className="label">Description</label>
-            <textarea
-              name="description"
-              className="textarea"
-              placeholder="Description"
-            ></textarea>
+            <textarea name="description" className="textarea" placeholder="Description"></textarea>
 
             {/* requirements field */}
             <label className="label">Requirements</label>

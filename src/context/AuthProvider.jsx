@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
-import AuthContext from './AuthContext';
-import auth from '../firebase/init.js';
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
-  GoogleAuthProvider,
-  onAuthStateChanged,
+  updateProfile,
 } from 'firebase/auth';
+import { useEffect, useState } from 'react';
+import auth from '../firebase/init.js';
+import AuthContext from './AuthContext';
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -16,35 +17,31 @@ const AuthProvider = ({ children }) => {
 
   const provider = new GoogleAuthProvider();
 
+  // 1. Authentication Functions
   const googleSignin = () => {
-    setLoading(true);
     return signInWithPopup(auth, provider);
   };
 
   const registerUser = (email, password) => {
-    setLoading(true);
     return createUserWithEmailAndPassword(auth, email, password);
   };
 
   const signinUser = (email, password) => {
-    setLoading(true);
     return signInWithEmailAndPassword(auth, email, password);
   };
 
   const signoutUser = () => {
-    setLoading(true);
     return signOut(auth);
   };
 
-  const authData = {
-    googleSignin,
-    registerUser,
-    signinUser,
-    signoutUser,
-    user,
-    loading,
+  const updateUserProfile = (name, photo) => {
+    return updateProfile(auth.currentUser, {
+      displayName: name,
+      photoURL: photo,
+    });
   };
 
+  // 2. Lifecycle Effects
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       console.log('state captured');
@@ -57,9 +54,18 @@ const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  return (
-    <AuthContext.Provider value={authData}>{children}</AuthContext.Provider>
-  );
+  // 3. Context Memoization (Prevents unnecessary re-renders)
+  const authData = {
+    googleSignin,
+    registerUser,
+    signinUser,
+    updateUserProfile,
+    signoutUser,
+    user,
+    loading,
+  };
+
+  return <AuthContext.Provider value={authData}>{children}</AuthContext.Provider>;
 };
 
 export default AuthProvider;

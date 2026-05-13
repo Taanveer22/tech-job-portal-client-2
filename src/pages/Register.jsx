@@ -1,30 +1,29 @@
 import Lottie from 'lottie-react';
-import jsonData from '../assets/register.json';
 import { use } from 'react';
-import AuthContext from '../context/AuthContext';
 import { useNavigate } from 'react-router';
+import jsonData from '../assets/register.json';
+import AuthContext from '../context/AuthContext';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { registerUser } = use(AuthContext);
+  const { registerUser, updateUserProfile } = use(AuthContext);
 
-  const handleRegisterForm = (e) => {
+  const handleRegisterForm = async (e) => {
     e.preventDefault();
     const name = e.target.name.value;
     const photo = e.target.photo.value;
     const email = e.target.email.value;
     const password = e.target.password.value;
-    console.log(name, photo, email, password);
+    // console.log(name, photo, email, password);
 
     // auth
-    registerUser(email, password)
-      .then((result) => {
-        console.log(result);
-        navigate('/');
-      })
-      .catch((error) => {
-        console.log(error.message);
-      });
+    try {
+      await registerUser(email, password);
+      await updateUserProfile(name, photo);
+      navigate('/');
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
@@ -38,33 +37,13 @@ const Register = () => {
             <form onSubmit={handleRegisterForm} className="card-body">
               <fieldset className="fieldset">
                 <label className="label">Name</label>
-                <input
-                  name="name"
-                  type="text"
-                  className="input"
-                  placeholder="Name"
-                />
+                <input name="name" type="text" className="input" placeholder="Name" />
                 <label className="label">Photo</label>
-                <input
-                  name="photo"
-                  type="text"
-                  className="input"
-                  placeholder="Photo"
-                />
+                <input name="photo" type="text" className="input" placeholder="Photo" />
                 <label className="label">Email</label>
-                <input
-                  name="email"
-                  type="email"
-                  className="input"
-                  placeholder="Email"
-                />
+                <input name="email" type="email" className="input" placeholder="Email" />
                 <label className="label">Password</label>
-                <input
-                  name="password"
-                  type="password"
-                  className="input"
-                  placeholder="Password"
-                />
+                <input name="password" type="password" className="input" placeholder="Password" />
 
                 <button className="btn btn-neutral mt-4">Register</button>
               </fieldset>

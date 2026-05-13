@@ -14,6 +14,9 @@ const AdminPostedJobs = () => {
 
   return (
     <div className="mb-8 lg:mb-16">
+      <h1 className="text-2xl font-semibold text-center mb-4">
+        Total Posted Jobs : {postedJobs.length}
+      </h1>
       <div className="overflow-x-auto">
         <table className="table">
           {/* head */}
@@ -29,9 +32,9 @@ const AdminPostedJobs = () => {
             {postedJobs.map((jobItem, index) => (
               <tr key={jobItem._id}>
                 <th>{index + 1}</th>
-                <td>{jobItem.title}</td>
-                <td>{jobItem.applicationDeadline}</td>
-                <td>Blue</td>
+                <td>{jobItem?.title}</td>
+                <td>{jobItem?.applicationDeadline}</td>
+                <td>{jobItem?.applicationCount}</td>
               </tr>
             ))}
           </tbody>

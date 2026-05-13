@@ -22,7 +22,7 @@ const Navbar = () => {
         <NavLink to="/">Home</NavLink>
       </li>
       <li>
-        <NavLink to="/usersApplications">Users Applications</NavLink>
+        <NavLink to="/myApplications">My Applications</NavLink>
       </li>
       <li>
         <NavLink to="/adminJobForm">Admin Job Form</NavLink>
@@ -74,6 +74,7 @@ const Navbar = () => {
         <div className="navbar-end hidden lg:flex gap-2">
           {user ? (
             <>
+              <span>{user?.displayName}</span>
               <button onClick={handleSignOutUser}>Signout</button>
             </>
           ) : (

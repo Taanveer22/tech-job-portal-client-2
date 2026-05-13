@@ -1,14 +1,14 @@
 import { createBrowserRouter } from 'react-router';
-import Root from '../layouts/Root';
-import Home from '../pages/Home';
-import Register from '../pages/Register';
-import Signin from '../pages/Signin';
-import JobCardDetail from '../components/JobCardDetail';
-import PrivateRouter from './PrivateRouter';
 import JobApply from '../components/JobApply';
-import UsersApplications from '../pages/UsersApplications';
+import JobCardDetail from '../components/JobCardDetail';
+import Root from '../layouts/Root';
 import AdminJobForm from '../pages/AdminJobForm';
 import AdminPostedJobs from '../pages/AdminPostedJobs';
+import Home from '../pages/Home';
+import MyApplications from '../pages/MyApplications';
+import Register from '../pages/Register';
+import Signin from '../pages/Signin';
+import PrivateRouter from './PrivateRouter';
 
 let PublicRouter = createBrowserRouter([
   {
@@ -26,8 +26,7 @@ let PublicRouter = createBrowserRouter([
             <JobCardDetail></JobCardDetail>
           </PrivateRouter>
         ),
-        loader: ({ params }) =>
-          fetch(`http://localhost:5000/jobs/${params.id}`),
+        loader: ({ params }) => fetch(`http://localhost:5000/jobs/${params.id}`),
       },
       {
         path: '/jobApply/:id',
@@ -38,10 +37,10 @@ let PublicRouter = createBrowserRouter([
         ),
       },
       {
-        path: '/usersApplications',
+        path: '/myApplications',
         element: (
           <PrivateRouter>
-            <UsersApplications></UsersApplications>
+            <MyApplications></MyApplications>
           </PrivateRouter>
         ),
       },

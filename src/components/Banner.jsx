@@ -18,7 +18,7 @@ const Banner = () => {
               animate={{ x: [100, 150, 100] }}
               transition={{ duration: 10, delay: 5, repeat: Infinity }}
               src={team2}
-              className=" max-w-sm rounded-t-4xl rounded-br-4xl border-l-4 border-b-4 border-blue-400"
+              className="max-w-sm rounded-t-4xl rounded-br-4xl border-l-4 border-b-4 border-blue-400"
             />
           </div>
           <div className="flex-1">
@@ -35,9 +35,8 @@ const Banner = () => {
               Job News!
             </motion.h1>
             <p className="py-6">
-              Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda
-              excepturi exercitationem quasi. In deleniti eaque aut repudiandae
-              et a id nisi.
+              Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi
+              exercitationem quasi. In deleniti eaque aut repudiandae et a id nisi.
             </p>
             <button className="btn btn-primary">Get Started</button>
           </div>
