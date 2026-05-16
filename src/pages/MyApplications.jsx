@@ -1,14 +1,32 @@
 import { use, useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
 
 const MyApplications = () => {
   const [apps, setApps] = useState([]);
-
   const { user } = use(AuthContext);
+
+  const handleDeleteApplication = (id) => {
+    // console.log(id);
+    fetch(`http://localhost:5000/applications/me/delete/${id}`, { method: 'DELETE' })
+      .then((res) => res.json())
+      .then((data) => {
+        // console.log(data);
+        if (data.deletedCount > 0) {
+          const remainingApps = apps.filter((appItem) => appItem._id !== id);
+          setApps(remainingApps);
+          Swal.fire('Application deleted done');
+        }
+      });
+  };
+
   useEffect(() => {
     fetch(`http://localhost:5000/applications/me?email=${user?.email}`)
       .then((res) => res.json())
-      .then((data) => setApps(data));
+      .then((data) => {
+        // console.log(data);
+        setApps(data);
+      });
   }, [user?.email]);
 
   return (
@@ -56,7 +74,12 @@ const MyApplications = () => {
                 <td>{appItem?.title}</td>
                 <td>{appItem?.jobType}</td>
                 <th>
-                  <button className="btn btn-error btn-xs">Delete</button>
+                  <button
+                    onClick={() => handleDeleteApplication(appItem?._id)}
+                    className="btn btn-error btn-xs"
+                  >
+                    Delete
+                  </button>
                 </th>
               </tr>
             ))}

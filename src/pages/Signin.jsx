@@ -1,8 +1,8 @@
 import Lottie from 'lottie-react';
-import jsonData from '../assets/signin.json';
 import { use } from 'react';
-import AuthContext from '../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router';
+import jsonData from '../assets/signin.json';
+import AuthContext from '../context/AuthContext';
 
 const Signin = () => {
   const location = useLocation();
@@ -31,6 +31,7 @@ const Signin = () => {
     googleSignin()
       .then((result) => {
         console.log(result.user);
+        navigate(from);
       })
       .catch((error) => {
         console.log(error.message);
@@ -50,29 +51,16 @@ const Signin = () => {
             <form onSubmit={handleSignInForm} className="card-body">
               <fieldset className="fieldset">
                 <label className="label">Email</label>
-                <input
-                  name="email"
-                  type="email"
-                  className="input"
-                  placeholder="Email"
-                />
+                <input name="email" type="email" className="input" placeholder="Email" />
                 <label className="label">Password</label>
-                <input
-                  name="password"
-                  type="password"
-                  className="input"
-                  placeholder="Password"
-                />
+                <input name="password" type="password" className="input" placeholder="Password" />
                 <div>
                   <a className="link link-hover">Forgot password?</a>
                 </div>
                 <button className="btn btn-neutral mt-4">Sign In</button>
               </fieldset>
             </form>
-            <button
-              onClick={handleGoogleSignin}
-              className="btn btn-warning mb-8 mx-6"
-            >
+            <button onClick={handleGoogleSignin} className="btn btn-warning mb-8 mx-6">
               Sign in with google
             </button>
           </div>
