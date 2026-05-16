@@ -1,11 +1,15 @@
+import { FaDeleteLeft } from 'react-icons/fa6';
 import { Link } from 'react-router';
 
-const JobCard = ({ jobItem }) => {
+const JobCard = ({ jobItem, handleDeleteJob }) => {
   // console.log(jobItem);
   const { _id, company, company_logo, description, title } = jobItem;
   return (
-    <div className="card bg-base-300 shadow-sm">
-      <div className="flex justify-around">
+    <div className="card bg-base-300 shadow-sm relative">
+      <button onClick={() => handleDeleteJob(_id)} className="absolute top-2 right-2 text-red-500">
+        <FaDeleteLeft size={30}></FaDeleteLeft>
+      </button>
+      <div className="flex gap-3 items-center pt-3">
         <img src={company_logo} className="w-12" />
         <h2 className="card-title">{company}</h2>
       </div>

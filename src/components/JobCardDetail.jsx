@@ -51,7 +51,7 @@ const JobCardDetail = () => {
           </div>
           <div className="flex justify-center items-center">
             <Link to={`/jobApply/${_id}`} className="btn btn-warning">
-              Apply For This Position
+              Apply
             </Link>
           </div>
         </div>
