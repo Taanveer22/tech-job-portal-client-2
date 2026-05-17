@@ -4,10 +4,11 @@ import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
 
 const JobApply = () => {
+  const { user } = use(AuthContext);
+  // console.log(user);
   const { id } = useParams();
   //   console.log(id);
   const navigate = useNavigate();
-  const { user } = use(AuthContext);
 
   const handleJobApplicationForm = (e) => {
     e.preventDefault();
@@ -18,7 +19,8 @@ const JobApply = () => {
 
     const applicationInfo = {
       job_id: id,
-      applicant_email: user?.email,
+      //✅ gmail issue step 2
+      applicant_email: user?.email || user?.providerData?.[0]?.email,
       github_url: github,
       linkedin_url: linkedin,
       resume_url: resume,
@@ -33,7 +35,7 @@ const JobApply = () => {
     })
       .then((res) => res.json())
       .then((data) => {
-        // console.log(data);
+        console.log(data);
         if (data.insertedId) {
           Swal.fire('Job Applied Successfully');
           navigate('/myApplications', { replace: true });

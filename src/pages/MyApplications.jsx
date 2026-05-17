@@ -5,6 +5,7 @@ import AuthContext from '../context/AuthContext';
 const MyApplications = () => {
   const [apps, setApps] = useState([]);
   const { user } = use(AuthContext);
+  // console.log(user);
 
   const handleDeleteApplication = (id) => {
     // console.log(id);
@@ -21,13 +22,18 @@ const MyApplications = () => {
   };
 
   useEffect(() => {
-    fetch(`http://localhost:5000/applications/me?email=${user?.email}`)
+    //✅ gmail issue step 3
+    const userEmail = user?.email || user?.providerData?.[0]?.email;
+    if (!userEmail) {
+      return;
+    }
+    fetch(`http://localhost:5000/applications/me?email=${userEmail}`)
       .then((res) => res.json())
       .then((data) => {
         // console.log(data);
         setApps(data);
       });
-  }, [user?.email]);
+  }, [user]);
 
   return (
     <div className="mb-8 lg:mb-16">
