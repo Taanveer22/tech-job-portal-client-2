@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
 
-const JobApply = () => {
+const MyJobApply = () => {
   const { user } = use(AuthContext);
   // console.log(user);
   const { id } = useParams();
@@ -74,4 +74,4 @@ const JobApply = () => {
   );
 };
 
-export default JobApply;
+export default MyJobApply;

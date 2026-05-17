@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router';
-import JobApply from '../components/JobApply';
+import AdminViewApplications from '../components/AdminViewApplications';
 import JobCardDetail from '../components/JobCardDetail';
+import MyJobApply from '../components/MyJobApply';
 import Root from '../layouts/Root';
 import AdminJobForm from '../pages/AdminJobForm';
 import AdminPostedJobs from '../pages/AdminPostedJobs';
@@ -29,10 +30,10 @@ let PublicRouter = createBrowserRouter([
         loader: ({ params }) => fetch(`http://localhost:5000/jobs/${params.id}`),
       },
       {
-        path: '/jobApply/:id',
+        path: '/myJobApply/:id',
         element: (
           <PrivateRouter>
-            <JobApply></JobApply>
+            <MyJobApply></MyJobApply>
           </PrivateRouter>
         ),
       },
@@ -57,6 +58,14 @@ let PublicRouter = createBrowserRouter([
         element: (
           <PrivateRouter>
             <AdminPostedJobs></AdminPostedJobs>
+          </PrivateRouter>
+        ),
+      },
+      {
+        path: '/adminViewApplications/:jobId',
+        element: (
+          <PrivateRouter>
+            <AdminViewApplications></AdminViewApplications>
           </PrivateRouter>
         ),
       },

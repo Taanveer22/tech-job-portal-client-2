@@ -1,15 +1,36 @@
 import { use, useEffect, useState } from 'react';
+import { Link } from 'react-router';
+import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
 
 const AdminPostedJobs = () => {
   const { user } = use(AuthContext);
+  // console.log(user);
   const [postedJobs, setPostedJobs] = useState([]);
 
+  const handleDeletePostedJob = (id) => {
+    // console.log(id);
+    fetch(`http://localhost:5000/jobs/delete/${id}`, { method: 'DELETE' })
+      .then((res) => res.json())
+      .then((data) => {
+        // console.log(data);
+        if (data.deletedCount > 0) {
+          const remainingJobs = postedJobs.filter((jobItem) => jobItem._id !== id);
+          setPostedJobs(remainingJobs);
+          Swal.fire('Job deleted successfully');
+        }
+      });
+  };
+
   useEffect(() => {
-    fetch(`http://localhost:5000/jobs?email=${user?.email}`)
+    //✅ gmail issue step 3(read)
+    const userEmail = user?.email || user?.providerData?.[0]?.email;
+    if (!userEmail) return;
+
+    fetch(`http://localhost:5000/jobs?email=${userEmail}`)
       .then((res) => res.json())
       .then((data) => setPostedJobs(data));
-  }, [user?.email]);
+  }, [user]);
   //   console.log(postedJobs);
 
   return (
@@ -24,8 +45,10 @@ const AdminPostedJobs = () => {
             <tr>
               <th>Serial</th>
               <th>Job Title</th>
-              <th>Application Deadline</th>
-              <th>Application Count</th>
+              <th>Deadline</th>
+              <th>Action</th>
+              <th>Count Applications</th>
+              <th>View Applications</th>
             </tr>
           </thead>
           <tbody>
@@ -34,7 +57,20 @@ const AdminPostedJobs = () => {
                 <th>{index + 1}</th>
                 <td>{jobItem?.title}</td>
                 <td>{jobItem?.applicationDeadline}</td>
+                <td>
+                  <button
+                    onClick={() => handleDeletePostedJob(jobItem._id)}
+                    className="btn btn-sm btn-error"
+                  >
+                    Delete
+                  </button>
+                </td>
                 <td>{jobItem?.applicationCount}</td>
+                <td>
+                  <Link to={`/adminViewApplications/${jobItem._id}`}>
+                    <button className="btn btn-sm btn-link">click to view</button>
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>

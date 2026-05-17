@@ -3,7 +3,7 @@ import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
 
 const MyApplications = () => {
-  const [apps, setApps] = useState([]);
+  const [myApps, setMyApps] = useState([]);
   const { user } = use(AuthContext);
   // console.log(user);
 
@@ -14,8 +14,8 @@ const MyApplications = () => {
       .then((data) => {
         // console.log(data);
         if (data.deletedCount > 0) {
-          const remainingApps = apps.filter((appItem) => appItem._id !== id);
-          setApps(remainingApps);
+          const remainingApps = myApps.filter((appItem) => appItem._id !== id);
+          setMyApps(remainingApps);
           Swal.fire('Application deleted done');
         }
       });
@@ -31,14 +31,14 @@ const MyApplications = () => {
       .then((res) => res.json())
       .then((data) => {
         // console.log(data);
-        setApps(data);
+        setMyApps(data);
       });
   }, [user]);
 
   return (
     <div className="mb-8 lg:mb-16">
       <h1 className="text-2xl font-semibold text-center mb-4">
-        Total applications : {apps.length}
+        Total applications : {myApps.length}
       </h1>
       <div className="overflow-x-auto">
         <table className="table">
@@ -57,7 +57,7 @@ const MyApplications = () => {
             </tr>
           </thead>
           <tbody>
-            {apps.map((appItem) => (
+            {myApps.map((appItem) => (
               <tr key={appItem?._id}>
                 <th>
                   <label>

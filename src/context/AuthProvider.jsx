@@ -16,7 +16,7 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const provider = new GoogleAuthProvider();
-  //✅ gmail issue step 1
+  //✅ gmail issue step 1(scope)
   provider.addScope('email');
 
   // 1. Authentication Functions

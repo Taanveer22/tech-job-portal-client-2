@@ -4,6 +4,7 @@ import AuthContext from '../context/AuthContext';
 
 const AdminJobForm = () => {
   const { user } = use(AuthContext);
+  // console.log(user);
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
@@ -114,7 +115,8 @@ const AdminJobForm = () => {
             {/* hr email field */}
             <label className="label">HR Email</label>
             <input
-              defaultValue={user?.email}
+              //✅ gmail issue step 2(create)
+              defaultValue={user?.email || user?.providerData?.[0]?.email}
               name="hr_email"
               type="email"
               className="input"
