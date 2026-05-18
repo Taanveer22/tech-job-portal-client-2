@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -46,9 +47,26 @@ const AuthProvider = ({ children }) => {
   // 2. Lifecycle Effects
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log('state captured');
       setUser(currentUser);
       setLoading(false);
+      // console.log('state captured', currentUser?.email || currentUser?.providerData?.[0]?.email);
+      const capturedUserEmail = currentUser?.email || currentUser?.providerData?.[0]?.email;
+      if (capturedUserEmail) {
+        const tokenUser = { email: capturedUserEmail };
+        axios
+          .post(`http://localhost:5000/jwt/login`, tokenUser, { withCredentials: true })
+          .then((res) => console.log(res.data));
+      } else {
+        axios
+          .post(
+            `http://localhost:5000/jwt/logout`,
+            {},
+            {
+              withCredentials: true,
+            }
+          )
+          .then((res) => console.log(res.data));
+      }
     });
 
     return () => {

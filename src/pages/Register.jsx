@@ -1,6 +1,7 @@
 import Lottie from 'lottie-react';
 import { use } from 'react';
 import { useNavigate } from 'react-router';
+import Swal from 'sweetalert2';
 import jsonData from '../assets/register.json';
 import AuthContext from '../context/AuthContext';
 
@@ -20,9 +21,11 @@ const Register = () => {
     try {
       await registerUser(email, password);
       await updateUserProfile(name, photo);
+      Swal.fire('user register successfully');
       navigate('/');
     } catch (error) {
-      console.log(error);
+      // console.log(error);
+      Swal.fire(error.message);
     }
   };
 

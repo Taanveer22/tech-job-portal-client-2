@@ -1,6 +1,7 @@
 import Lottie from 'lottie-react';
 import { use } from 'react';
 import { useLocation, useNavigate } from 'react-router';
+import Swal from 'sweetalert2';
 import jsonData from '../assets/signin.json';
 import AuthContext from '../context/AuthContext';
 
@@ -19,22 +20,30 @@ const Signin = () => {
     // auth
     signinUser(email, password)
       .then((result) => {
-        console.log(result.user);
+        // console.log(result.user);
+        if (result?.user) {
+          Swal.fire('user login successully');
+        }
         navigate(from);
       })
       .catch((error) => {
-        console.log(error.message);
+        // console.log(error.message);
+        Swal.fire(error.message);
       });
   };
 
   const handleGoogleSignin = () => {
     googleSignin()
       .then((result) => {
-        console.log(result.user);
+        // console.log(result.user);
+        if (result?.user) {
+          Swal.fire('user login successully');
+        }
         navigate(from);
       })
       .catch((error) => {
-        console.log(error.message);
+        // console.log(error.message);
+        Swal.fire(error.message);
       });
   };
 
