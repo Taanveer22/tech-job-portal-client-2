@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { use, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
@@ -27,11 +28,13 @@ const MyApplications = () => {
     if (!userEmail) {
       return;
     }
-    fetch(`http://localhost:5000/applications/me?email=${userEmail}`)
-      .then((res) => res.json())
-      .then((data) => {
-        // console.log(data);
-        setMyApps(data);
+    axios
+      .get(`http://localhost:5000/applications/me?email=${userEmail}`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        // console.log(res.data);
+        setMyApps(res.data);
       });
   }, [user]);
 
