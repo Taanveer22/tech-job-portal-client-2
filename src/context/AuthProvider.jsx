@@ -1,4 +1,3 @@
-import axios from 'axios';
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -10,11 +9,13 @@ import {
 } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import auth from '../firebase/init.js';
+import useAxiosSecure from '../hooks/useAxiosSecure.jsx';
 import AuthContext from './AuthContext';
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const axiosSecure = useAxiosSecure();
 
   const provider = new GoogleAuthProvider();
   //✅ gmail issue step 1(scope)
@@ -53,18 +54,12 @@ const AuthProvider = ({ children }) => {
       const capturedUserEmail = currentUser?.email || currentUser?.providerData?.[0]?.email;
       if (capturedUserEmail) {
         const tokenUser = { email: capturedUserEmail };
-        axios
-          .post(`http://localhost:5000/jwt/login`, tokenUser, { withCredentials: true })
+        axiosSecure
+          .post(`http://localhost:5000/jwt/login`, tokenUser)
           .then((res) => console.log(res.data));
       } else {
-        axios
-          .post(
-            `http://localhost:5000/jwt/logout`,
-            {},
-            {
-              withCredentials: true,
-            }
-          )
+        axiosSecure
+          .post(`http://localhost:5000/jwt/logout`, {})
           .then((res) => console.log(res.data));
       }
     });
@@ -72,7 +67,7 @@ const AuthProvider = ({ children }) => {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [axiosSecure]);
 
   // 3. Context Memoization (Prevents unnecessary re-renders)
   const authData = {

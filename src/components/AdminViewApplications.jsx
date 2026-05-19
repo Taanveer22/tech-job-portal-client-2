@@ -1,43 +1,35 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import Swal from 'sweetalert2';
+import useAxiosSecure from '../hooks/useAxiosSecure';
 
 const AdminViewApplications = () => {
   const [viewApps, setViewApps] = useState([]);
   // console.log(viewApps);
   const { jobId } = useParams();
   // console.log(jobId);
+  const axiosSecure = useAxiosSecure();
 
   const handleUpdateStatus = (e, id) => {
     // console.log(e.target.value, id);
     const data = {
       status: e.target.value,
     };
-
-    fetch(`http://localhost:5000/applications/admin/status/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        // console.log(data);
-        if (data.modifiedCount > 0) {
-          Swal.fire('Job status updated successfully');
-        }
-      });
+    axiosSecure.patch(`/applications/admin/status/${id}`, data).then((res) => {
+      // console.log(res.data);
+      if (res.data.modifiedCount > 0) {
+        Swal.fire('Job status updated successfully');
+      }
+    });
   };
 
   useEffect(() => {
-    fetch(`http://localhost:5000/applications/admin/view/${jobId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        // console.log(data);
-        setViewApps(data);
-      });
-  }, [jobId]);
+    axiosSecure.get(`/applications/admin/view/${jobId}`).then((res) => {
+      // console.log(res.data);
+      setViewApps(res.data);
+    });
+  }, [jobId, axiosSecure]);
+
   return (
     <div>
       <h1 className="text-2xl font-semibold text-center mb-4">

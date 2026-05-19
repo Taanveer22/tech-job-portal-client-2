@@ -2,35 +2,32 @@ import { use, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
+import useAxiosSecure from '../hooks/useAxiosSecure';
 
 const AdminPostedJobs = () => {
   const { user } = use(AuthContext);
   // console.log(user);
   const [postedJobs, setPostedJobs] = useState([]);
+  const axiosSecure = useAxiosSecure();
 
   const handleDeletePostedJob = (id) => {
     // console.log(id);
-    fetch(`http://localhost:5000/jobs/delete/${id}`, { method: 'DELETE' })
-      .then((res) => res.json())
-      .then((data) => {
-        // console.log(data);
-        if (data.deletedCount > 0) {
-          const remainingJobs = postedJobs.filter((jobItem) => jobItem._id !== id);
-          setPostedJobs(remainingJobs);
-          Swal.fire('Job deleted successfully');
-        }
-      });
+    axiosSecure.delete(`/jobs/delete/${id}`).then((res) => {
+      // console.log(res.data);
+      if (res.data.deletedCount > 0) {
+        const remainingJobs = postedJobs.filter((jobItem) => jobItem._id !== id);
+        setPostedJobs(remainingJobs);
+        Swal.fire('Job deleted successfully');
+      }
+    });
   };
 
   useEffect(() => {
     //✅ gmail issue step 3(read)
     const userEmail = user?.email || user?.providerData?.[0]?.email;
     if (!userEmail) return;
-
-    fetch(`http://localhost:5000/jobs?email=${userEmail}`)
-      .then((res) => res.json())
-      .then((data) => setPostedJobs(data));
-  }, [user]);
+    axiosSecure.get(`/jobs?email=${userEmail}`).then((res) => setPostedJobs(res.data));
+  }, [user, axiosSecure]);
   //   console.log(postedJobs);
 
   return (

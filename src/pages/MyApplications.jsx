@@ -1,25 +1,24 @@
-import axios from 'axios';
 import { use, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
+import useAxiosSecure from '../hooks/useAxiosSecure';
 
 const MyApplications = () => {
   const [myApps, setMyApps] = useState([]);
   const { user } = use(AuthContext);
   // console.log(user);
+  const axiosSecure = useAxiosSecure();
 
   const handleDeleteApplication = (id) => {
     // console.log(id);
-    fetch(`http://localhost:5000/applications/me/delete/${id}`, { method: 'DELETE' })
-      .then((res) => res.json())
-      .then((data) => {
-        // console.log(data);
-        if (data.deletedCount > 0) {
-          const remainingApps = myApps.filter((appItem) => appItem._id !== id);
-          setMyApps(remainingApps);
-          Swal.fire('Application deleted done');
-        }
-      });
+    axiosSecure.delete(`/applications/me/delete/${id}`).then((res) => {
+      // console.log(res.data);
+      if (res.data.deletedCount > 0) {
+        const remainingApps = myApps.filter((appItem) => appItem._id !== id);
+        setMyApps(remainingApps);
+        Swal.fire('Application deleted done');
+      }
+    });
   };
 
   useEffect(() => {
@@ -28,15 +27,15 @@ const MyApplications = () => {
     if (!userEmail) {
       return;
     }
-    axios
-      .get(`http://localhost:5000/applications/me?email=${userEmail}`, {
+    axiosSecure
+      .get(`/applications/me?email=${userEmail}`, {
         withCredentials: true,
       })
       .then((res) => {
         // console.log(res.data);
         setMyApps(res.data);
       });
-  }, [user]);
+  }, [user, axiosSecure]);
 
   return (
     <div className="mb-8 lg:mb-16">

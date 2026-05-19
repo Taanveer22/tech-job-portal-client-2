@@ -1,5 +1,6 @@
 import { use } from 'react';
 import { NavLink } from 'react-router';
+import Swal from 'sweetalert2';
 import logo from '../assets/logo.png';
 import AuthContext from '../context/AuthContext';
 
@@ -9,10 +10,10 @@ const Navbar = () => {
   const handleSignOutUser = () => {
     signoutUser()
       .then(() => {
-        console.log('sign out successful');
+        Swal.fire('sign out successful');
       })
       .catch(() => {
-        console.log('sign out failed');
+        Swal.fire('sign out failed');
       });
   };
 

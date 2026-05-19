@@ -2,6 +2,7 @@ import { use } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
+import useAxiosSecure from '../hooks/useAxiosSecure';
 
 const MyJobApply = () => {
   const { user } = use(AuthContext);
@@ -9,6 +10,7 @@ const MyJobApply = () => {
   const { id } = useParams();
   //   console.log(id);
   const navigate = useNavigate();
+  const axiosSecure = useAxiosSecure();
 
   const handleJobApplicationForm = (e) => {
     e.preventDefault();
@@ -26,21 +28,13 @@ const MyJobApply = () => {
       resume_url: resume,
     };
 
-    fetch(`http://localhost:5000/applications/me/apply`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(applicationInfo),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        if (data.insertedId) {
-          Swal.fire('Job Applied Successfully');
-          navigate('/myApplications', { replace: true });
-        }
-      });
+    axiosSecure.post(`/applications/me/apply`, applicationInfo).then((res) => {
+      // console.log(res.data);
+      if (res.data.insertedId) {
+        Swal.fire('Job Applied Successfully');
+        navigate('/myApplications', { replace: true });
+      }
+    });
   };
 
   return (

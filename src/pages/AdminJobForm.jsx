@@ -1,10 +1,12 @@
 import { use } from 'react';
 import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
+import useAxiosSecure from '../hooks/useAxiosSecure';
 
 const AdminJobForm = () => {
   const { user } = use(AuthContext);
   // console.log(user);
+  const axiosSecure = useAxiosSecure();
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
@@ -25,20 +27,12 @@ const AdminJobForm = () => {
     console.log(newJob);
 
     // send job data to server
-    fetch(`http://localhost:5000/jobs/add`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newJob),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        if (data.insertedId) {
-          Swal.fire('Add job succesfully');
-        }
-      });
+    axiosSecure.post(`/jobs/add`, newJob).then((res) => {
+      // console.log(res.data);
+      if (res.data.insertedId) {
+        Swal.fire('Add job succesfully');
+      }
+    });
   };
 
   return (
