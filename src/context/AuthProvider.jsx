@@ -8,37 +8,57 @@ import {
   signOut,
   updateProfile,
 } from 'firebase/auth';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
 import BASE_URL from '../api/baseUrl.js';
 import auth from '../firebase/init.js';
 import logger from '../utilities/logger.js';
 import AuthContext from './AuthContext';
 
+// Create Google login provider
 const provider = new GoogleAuthProvider();
-//✅ gmail issue step 1(scope)
+
+// Allow email access from Google login step 1
 provider.addScope('email');
 
 const AuthProvider = ({ children }) => {
+  // ---------------- STATE ----------------
+
+  // store logged-in user (null if not logged in)
   const [user, setUser] = useState(null);
+
+  // loading is true until Firebase finishes checking login state
   const [loading, setLoading] = useState(true);
 
-  // 1. Authentication Functions
+  // ---------------- HELPER (ANTI-DUPLICATE) ----------------
+
+  // This keeps track of last auth action (login or logout)
+  // It helps prevent duplicate API calls
+  const lastAuthState = useRef(null);
+
+  // ---------------- AUTH FUNCTIONS ----------------
+
+  // Google login function
   const googleSignin = () => {
     return signInWithPopup(auth, provider);
   };
 
+  // Create new user with email + password
   const registerUser = (email, password) => {
     return createUserWithEmailAndPassword(auth, email, password);
   };
 
+  // Login existing user
   const signinUser = (email, password) => {
     return signInWithEmailAndPassword(auth, email, password);
   };
 
+  // Logout user from Firebase
   const signoutUser = () => {
     return signOut(auth);
   };
 
+  // Update user profile (name, photo)
   const updateUserProfile = (name, photo) => {
     return updateProfile(auth.currentUser, {
       displayName: name,
@@ -46,63 +66,71 @@ const AuthProvider = ({ children }) => {
     });
   };
 
-  // 2. Lifecycle Effects
-  useEffect(() => {
-    // 👈 track the debounce timer
-    let logoutTimer = null;
+  // ---------------- AUTH LISTENER ----------------
 
+  useEffect(() => {
+    // Firebase listens for login/logout changes automatically
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      // Save user in state (used in UI)
       setUser(currentUser);
+
+      // stop loading spinner
       setLoading(false);
 
-      // console.log('state captured', currentUser?.email || currentUser?.providerData?.[0]?.email);
+      // ---------------- LOGIN CASE ----------------
+      if (currentUser) {
+        // get user email safely
+        const email = currentUser.email || currentUser?.providerData?.[0]?.email;
 
-      const capturedUserEmail = currentUser?.email || currentUser?.providerData?.[0]?.email;
-      if (capturedUserEmail) {
-        // 👈 User is real — cancel any pending logout and log in
-        // 👈 cancel spurious logout
-        clearTimeout(logoutTimer);
+        // if email not found, stop here
+        if (!email) return;
 
-        const tokenUser = { email: capturedUserEmail };
+        // prevent sending login request again and again
+        if (lastAuthState.current === 'login') return;
+
+        // mark state as login
+        lastAuthState.current = 'login';
+
+        // send email to backend → get JWT cookie
         axios
-          .post(`${BASE_URL}/jwt/login`, tokenUser, {
-            withCredentials: true,
-          })
+          .post(`${BASE_URL}/jwt/login`, { email }, { withCredentials: true })
           .then((res) => {
-            logger.log(res.data);
+            logger.log('JWT login success:', res.data);
           })
-          .catch((error) => {
-            logger.log(error);
+          .catch((err) => {
+            logger.log('JWT login error:', err);
           });
-      } else {
-        // null might be transient — wait 500ms before actually logging out
-        logoutTimer = setTimeout(() => {
-          axios
-            .post(
-              `${BASE_URL}/jwt/logout`,
-              {},
-              {
-                withCredentials: true,
-              }
-            )
-            .then((res) => {
-              logger.log(res.data);
-            })
-            .catch((error) => {
-              logger.log(error);
-            });
-        }, 500);
+
+        return; // stop here (important)
       }
+
+      // ---------------- LOGOUT CASE ----------------
+
+      // if already processed logout, do nothing
+      if (lastAuthState.current === 'logout') return;
+
+      // mark state as logout
+      lastAuthState.current = 'logout';
+
+      // call backend to remove JWT cookie
+      axios
+        .post(`${BASE_URL}/jwt/logout`, {}, { withCredentials: true })
+        .then((res) => {
+          logger.log('JWT logout success:', res.data);
+        })
+        .catch((err) => {
+          logger.log('JWT logout error:', err);
+        });
     });
 
+    // cleanup function (runs when component unmounts)
     return () => {
       unsubscribe();
-      // 👈 clean up on unmount too
-      clearTimeout(logoutTimer);
     };
   }, []);
 
-  // 3. Context Memoization (Prevents unnecessary re-renders)
+  // ---------------- DATA SENT TO APP ----------------
+
   const authData = {
     googleSignin,
     registerUser,
@@ -113,6 +141,7 @@ const AuthProvider = ({ children }) => {
     loading,
   };
 
+  // Provide all auth functions + user to whole app
   return <AuthContext.Provider value={authData}>{children}</AuthContext.Provider>;
 };
 

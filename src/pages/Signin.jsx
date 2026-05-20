@@ -12,39 +12,38 @@ const Signin = () => {
 
   const from = location?.state || '/';
 
-  const handleSignInForm = (e) => {
+  const handleSignInForm = async (e) => {
     e.preventDefault();
     const email = e.target.email.value;
     const password = e.target.password.value;
-    // console.log(email, password);
-    // auth
-    signinUser(email, password)
-      .then((result) => {
-        // console.log(result.user);
-        if (result?.user) {
-          Swal.fire('user login successully');
-        }
+
+    try {
+      const result = await signinUser(email, password);
+
+      if (result?.user) {
+        // ✅ JWT is issued automatically in onAuthStateChanged
+        // no need to manually call jwt/login here
+        Swal.fire('User login successfully');
         navigate(from);
-      })
-      .catch((error) => {
-        // console.log(error.message);
-        Swal.fire(error.message);
-      });
+      }
+    } catch (error) {
+      Swal.fire(error.message);
+    }
   };
 
-  const handleGoogleSignin = () => {
-    googleSignin()
-      .then((result) => {
-        // console.log(result.user);
-        if (result?.user) {
-          Swal.fire('user login successully');
-        }
+  const handleGoogleSignin = async () => {
+    try {
+      const result = await googleSignin();
+
+      if (result?.user) {
+        // ✅ JWT is issued automatically in onAuthStateChanged
+        // no need to manually call jwt/login here
+        Swal.fire('User login successfully');
         navigate(from);
-      })
-      .catch((error) => {
-        // console.log(error.message);
-        Swal.fire(error.message);
-      });
+      }
+    } catch (error) {
+      Swal.fire(error.message);
+    }
   };
 
   return (
@@ -53,7 +52,7 @@ const Signin = () => {
         <div className="hero-content flex-col lg:flex-row-reverse">
           <div className="text-center lg:text-left">
             <div className="w-full">
-              <Lottie animationData={jsonData}></Lottie>
+              <Lottie animationData={jsonData} />
             </div>
           </div>
           <div className="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
@@ -70,7 +69,7 @@ const Signin = () => {
               </fieldset>
             </form>
             <button onClick={handleGoogleSignin} className="btn btn-warning mb-8 mx-6">
-              Sign in with google
+              Sign in with Google
             </button>
           </div>
         </div>
