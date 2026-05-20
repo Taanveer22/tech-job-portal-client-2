@@ -9,7 +9,9 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { useEffect, useState } from 'react';
+import BASE_URL from '../api/baseUrl.js';
 import auth from '../firebase/init.js';
+import logger from '../utilities/logger.js';
 import AuthContext from './AuthContext';
 
 const AuthProvider = ({ children }) => {
@@ -56,29 +58,29 @@ const AuthProvider = ({ children }) => {
       if (capturedUserEmail) {
         const tokenUser = { email: capturedUserEmail };
         axios
-          .post(`https://tech-job-portal-server-2.onrender.com/jwt/login`, tokenUser, {
+          .post(`${BASE_URL}/jwt/login`, tokenUser, {
             withCredentials: true,
           })
           .then((res) => {
-            // console.log(res.data);
-            if (res?.data) {
-              alert('jwt login ongoing...');
-            }
+            logger.log(res.data);
+          })
+          .catch((error) => {
+            logger.log(error);
           });
       } else {
         axios
           .post(
-            `https://tech-job-portal-server-2.onrender.com/jwt/logout`,
+            `${BASE_URL}/jwt/logout`,
             {},
             {
               withCredentials: true,
             }
           )
           .then((res) => {
-            // console.log(res.data);
-            if (res?.data) {
-              alert('jwt logout ongoing..');
-            }
+            logger.log(res.data);
+          })
+          .catch((error) => {
+            logger.log(error);
           });
       }
     });

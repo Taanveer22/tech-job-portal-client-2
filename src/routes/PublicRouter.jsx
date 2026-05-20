@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router';
+import BASE_URL from '../api/baseUrl';
 import AdminViewApplications from '../components/AdminViewApplications';
 import JobCardDetail from '../components/JobCardDetail';
 import MyJobApply from '../components/MyJobApply';
@@ -27,8 +28,7 @@ let PublicRouter = createBrowserRouter([
             <JobCardDetail></JobCardDetail>
           </PrivateRouter>
         ),
-        loader: ({ params }) =>
-          fetch(`https://tech-job-portal-server-2.onrender.com/jobs/${params.id}`),
+        loader: ({ params }) => fetch(`${BASE_URL}/jobs/${params.id}`),
       },
       {
         path: '/myJobApply/:id',
