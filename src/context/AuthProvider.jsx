@@ -10,7 +10,7 @@ import {
   updateProfile,
 } from 'firebase/auth';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import BASE_URL from '../api/baseUrl.js';
 import auth from '../firebase/init.js';
@@ -18,7 +18,7 @@ import logger from '../utilities/logger.js';
 import AuthContext from './AuthContext';
 
 // ======================================================
-// GOOGLE PROVIDER
+// GOOGLE PROVIDER SETUP
 // ======================================================
 
 // create google provider
@@ -32,43 +32,53 @@ const AuthProvider = ({ children }) => {
   // STATES
   // ======================================================
 
-  // stores logged in user
+  // stores firebase logged in user
   const [user, setUser] = useState(null);
 
-  // loading state
+  // loading state for auth checking
   const [loading, setLoading] = useState(true);
-
-  // ======================================================
-  // PREVENT DUPLICATE LOGIN / LOGOUT REQUESTS
-  // ======================================================
-
-  const lastAuthState = useRef(null);
 
   // ======================================================
   // AUTH FUNCTIONS
   // ======================================================
 
-  // google signin
+  // google login
   const googleSignin = () => {
     return signInWithPopup(auth, provider);
   };
 
-  // register user
+  // email/password register
   const registerUser = (email, password) => {
     return createUserWithEmailAndPassword(auth, email, password);
   };
 
-  // login user
+  // email/password login
   const signinUser = (email, password) => {
     return signInWithEmailAndPassword(auth, email, password);
   };
 
   // logout user
-  const signoutUser = () => {
+  const signoutUser = async () => {
+    try {
+      // remove jwt cookie first
+      await axios.post(
+        `${BASE_URL}/jwt/logout`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+
+      logger.log('JWT logout success');
+    } catch (error) {
+      logger.log('JWT logout error:', error);
+    }
+
+    // then logout from firebase
     return signOut(auth);
   };
 
-  // update user profile
+  // update firebase profile
   const updateUserProfile = (name, photo) => {
     return updateProfile(auth.currentUser, {
       displayName: name,
@@ -81,77 +91,58 @@ const AuthProvider = ({ children }) => {
   // ======================================================
 
   useEffect(() => {
-    // listen for auth state changes
+    // listen for firebase auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      // save firebase user
-      setUser(currentUser);
+      try {
+        // start loading
+        setLoading(true);
 
-      // ======================================================
-      // LOGIN CASE
-      // ======================================================
+        // ==================================================
+        // LOGIN CASE
+        // ==================================================
 
-      if (currentUser) {
-        try {
-          // get email safely
+        if (currentUser) {
+          // get user email safely
           const email = currentUser.email || currentUser?.providerData?.[0]?.email;
 
-          // stop if email missing
+          // if email missing stop here
           if (!email) {
+            setUser(null);
             setLoading(false);
             return;
           }
 
-          // prevent duplicate login requests
-          if (lastAuthState.current !== 'login') {
-            // save auth state
-            lastAuthState.current = 'login';
-
-            // IMPORTANT:
-            // wait until backend creates JWT cookie
-            await axios.post(
-              `${BASE_URL}/jwt/login`,
-              { email },
-              {
-                withCredentials: true,
-              }
-            );
-
-            logger.log('JWT login success');
-          }
-        } catch (error) {
-          logger.log('JWT login error:', error);
-        } finally {
           // IMPORTANT:
-          // stop loading ONLY after JWT finishes
-          setLoading(false);
-        }
-
-        return;
-      }
-
-      // ======================================================
-      // LOGOUT CASE
-      // ======================================================
-
-      try {
-        // prevent duplicate logout requests
-        if (lastAuthState.current !== 'logout') {
-          // save logout state
-          lastAuthState.current = 'logout';
-
-          // remove JWT cookie from backend
+          // create jwt cookie in backend first
           await axios.post(
-            `${BASE_URL}/jwt/logout`,
-            {},
+            `${BASE_URL}/jwt/login`,
+            { email },
             {
               withCredentials: true,
             }
           );
 
-          logger.log('JWT logout success');
+          // AFTER jwt success save user
+          setUser(currentUser);
+
+          logger.log('JWT login success');
+        }
+
+        // ==================================================
+        // LOGOUT CASE
+        // ==================================================
+        else {
+          // clear user from frontend
+          setUser(null);
+
+          logger.log('User logged out');
         }
       } catch (error) {
-        logger.log('JWT logout error:', error);
+        // if jwt creation fails
+        logger.log('Auth state error:', error);
+
+        // clear invalid user
+        setUser(null);
       } finally {
         // stop loading
         setLoading(false);
@@ -178,7 +169,7 @@ const AuthProvider = ({ children }) => {
     loading,
   };
 
-  // provide auth data globally
+  // provide auth globally
   return <AuthContext.Provider value={authData}>{children}</AuthContext.Provider>;
 };
 
