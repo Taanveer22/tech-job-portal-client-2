@@ -1,11 +1,11 @@
-import { use } from 'react';
+import { useContext } from 'react';
 import { NavLink } from 'react-router';
 import Swal from 'sweetalert2';
 import logo from '../assets/logo.png';
 import AuthContext from '../context/AuthContext';
 
 const Navbar = () => {
-  const { user, signoutUser } = use(AuthContext);
+  const { user, signoutUser } = useContext(AuthContext);
 
   const handleSignOutUser = () => {
     signoutUser()

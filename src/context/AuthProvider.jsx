@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -9,13 +10,11 @@ import {
 } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import auth from '../firebase/init.js';
-import useAxiosSecure from '../hooks/useAxiosSecure.jsx';
 import AuthContext from './AuthContext';
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const axiosSecure = useAxiosSecure();
 
   const provider = new GoogleAuthProvider();
   //✅ gmail issue step 1(scope)
@@ -50,24 +49,44 @@ const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
+
       // console.log('state captured', currentUser?.email || currentUser?.providerData?.[0]?.email);
+
       const capturedUserEmail = currentUser?.email || currentUser?.providerData?.[0]?.email;
       if (capturedUserEmail) {
         const tokenUser = { email: capturedUserEmail };
-        axiosSecure
-          .post(`http://localhost:5000/jwt/login`, tokenUser)
-          .then((res) => console.log(res.data));
+        axios
+          .post(`https://tech-job-portal-server-2.onrender.com/jwt/login`, tokenUser, {
+            withCredentials: true,
+          })
+          .then((res) => {
+            // console.log(res.data);
+            if (res?.data) {
+              alert('jwt login ongoing...');
+            }
+          });
       } else {
-        axiosSecure
-          .post(`http://localhost:5000/jwt/logout`, {})
-          .then((res) => console.log(res.data));
+        axios
+          .post(
+            `https://tech-job-portal-server-2.onrender.com/jwt/logout`,
+            {},
+            {
+              withCredentials: true,
+            }
+          )
+          .then((res) => {
+            // console.log(res.data);
+            if (res?.data) {
+              alert('jwt logout ongoing..');
+            }
+          });
       }
     });
 
     return () => {
       unsubscribe();
     };
-  }, [axiosSecure]);
+  }, []);
 
   // 3. Context Memoization (Prevents unnecessary re-renders)
   const authData = {

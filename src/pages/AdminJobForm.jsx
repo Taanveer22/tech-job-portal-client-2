@@ -24,7 +24,7 @@ const AdminJobForm = () => {
     newJob.salaryRange = { min, max, currency };
     newJob.responsibilities = newJob.responsibilities.split('\n');
     newJob.requirements = newJob.requirements.split('\n');
-    console.log(newJob);
+    // console.log(newJob);
 
     // send job data to server
     axiosSecure.post(`/jobs/add`, newJob).then((res) => {

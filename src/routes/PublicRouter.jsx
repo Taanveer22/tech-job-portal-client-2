@@ -27,7 +27,8 @@ let PublicRouter = createBrowserRouter([
             <JobCardDetail></JobCardDetail>
           </PrivateRouter>
         ),
-        loader: ({ params }) => fetch(`http://localhost:5000/jobs/${params.id}`),
+        loader: ({ params }) =>
+          fetch(`https://tech-job-portal-server-2.onrender.com/jobs/${params.id}`),
       },
       {
         path: '/myJobApply/:id',
