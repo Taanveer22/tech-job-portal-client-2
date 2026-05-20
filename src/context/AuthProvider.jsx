@@ -1,4 +1,5 @@
 import axios from 'axios';
+
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -8,6 +9,7 @@ import {
   signOut,
   updateProfile,
 } from 'firebase/auth';
+
 import { useEffect, useRef, useState } from 'react';
 
 import BASE_URL from '../api/baseUrl.js';
@@ -15,50 +17,58 @@ import auth from '../firebase/init.js';
 import logger from '../utilities/logger.js';
 import AuthContext from './AuthContext';
 
-// Create Google login provider
+// ======================================================
+// GOOGLE PROVIDER
+// ======================================================
+
+// create google provider
 const provider = new GoogleAuthProvider();
 
-// Allow email access from Google login step 1
+// request email permission
 provider.addScope('email');
 
 const AuthProvider = ({ children }) => {
-  // ---------------- STATE ----------------
+  // ======================================================
+  // STATES
+  // ======================================================
 
-  // store logged-in user (null if not logged in)
+  // stores logged in user
   const [user, setUser] = useState(null);
 
-  // loading is true until Firebase finishes checking login state
+  // loading state
   const [loading, setLoading] = useState(true);
 
-  // ---------------- HELPER (ANTI-DUPLICATE) ----------------
+  // ======================================================
+  // PREVENT DUPLICATE LOGIN / LOGOUT REQUESTS
+  // ======================================================
 
-  // This keeps track of last auth action (login or logout)
-  // It helps prevent duplicate API calls
   const lastAuthState = useRef(null);
 
-  // ---------------- AUTH FUNCTIONS ----------------
+  // ======================================================
+  // AUTH FUNCTIONS
+  // ======================================================
 
-  // Google login function
+  // google signin
   const googleSignin = () => {
     return signInWithPopup(auth, provider);
   };
 
-  // Create new user with email + password
+  // register user
   const registerUser = (email, password) => {
     return createUserWithEmailAndPassword(auth, email, password);
   };
 
-  // Login existing user
+  // login user
   const signinUser = (email, password) => {
     return signInWithEmailAndPassword(auth, email, password);
   };
 
-  // Logout user from Firebase
+  // logout user
   const signoutUser = () => {
     return signOut(auth);
   };
 
-  // Update user profile (name, photo)
+  // update user profile
   const updateUserProfile = (name, photo) => {
     return updateProfile(auth.currentUser, {
       displayName: name,
@@ -66,82 +76,109 @@ const AuthProvider = ({ children }) => {
     });
   };
 
-  // ---------------- AUTH LISTENER ----------------
+  // ======================================================
+  // FIREBASE AUTH LISTENER
+  // ======================================================
 
   useEffect(() => {
-    // Firebase listens for login/logout changes automatically
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      // Save user in state (used in UI)
+    // listen for auth state changes
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      // save firebase user
       setUser(currentUser);
 
-      // stop loading spinner
-      setLoading(false);
+      // ======================================================
+      // LOGIN CASE
+      // ======================================================
 
-      // ---------------- LOGIN CASE ----------------
       if (currentUser) {
-        // get user email safely
-        const email = currentUser.email || currentUser?.providerData?.[0]?.email;
+        try {
+          // get email safely
+          const email = currentUser.email || currentUser?.providerData?.[0]?.email;
 
-        // if email not found, stop here
-        if (!email) return;
+          // stop if email missing
+          if (!email) {
+            setLoading(false);
+            return;
+          }
 
-        // prevent sending login request again and again
-        if (lastAuthState.current === 'login') return;
+          // prevent duplicate login requests
+          if (lastAuthState.current !== 'login') {
+            // save auth state
+            lastAuthState.current = 'login';
 
-        // mark state as login
-        lastAuthState.current = 'login';
+            // IMPORTANT:
+            // wait until backend creates JWT cookie
+            await axios.post(
+              `${BASE_URL}/jwt/login`,
+              { email },
+              {
+                withCredentials: true,
+              }
+            );
 
-        // send email to backend → get JWT cookie
-        axios
-          .post(`${BASE_URL}/jwt/login`, { email }, { withCredentials: true })
-          .then((res) => {
-            logger.log('JWT login success:', res.data);
-          })
-          .catch((err) => {
-            logger.log('JWT login error:', err);
-          });
+            logger.log('JWT login success');
+          }
+        } catch (error) {
+          logger.log('JWT login error:', error);
+        } finally {
+          // IMPORTANT:
+          // stop loading ONLY after JWT finishes
+          setLoading(false);
+        }
 
-        return; // stop here (important)
+        return;
       }
 
-      // ---------------- LOGOUT CASE ----------------
+      // ======================================================
+      // LOGOUT CASE
+      // ======================================================
 
-      // if already processed logout, do nothing
-      if (lastAuthState.current === 'logout') return;
+      try {
+        // prevent duplicate logout requests
+        if (lastAuthState.current !== 'logout') {
+          // save logout state
+          lastAuthState.current = 'logout';
 
-      // mark state as logout
-      lastAuthState.current = 'logout';
+          // remove JWT cookie from backend
+          await axios.post(
+            `${BASE_URL}/jwt/logout`,
+            {},
+            {
+              withCredentials: true,
+            }
+          );
 
-      // call backend to remove JWT cookie
-      axios
-        .post(`${BASE_URL}/jwt/logout`, {}, { withCredentials: true })
-        .then((res) => {
-          logger.log('JWT logout success:', res.data);
-        })
-        .catch((err) => {
-          logger.log('JWT logout error:', err);
-        });
+          logger.log('JWT logout success');
+        }
+      } catch (error) {
+        logger.log('JWT logout error:', error);
+      } finally {
+        // stop loading
+        setLoading(false);
+      }
     });
 
-    // cleanup function (runs when component unmounts)
+    // cleanup listener
     return () => {
       unsubscribe();
     };
   }, []);
 
-  // ---------------- DATA SENT TO APP ----------------
+  // ======================================================
+  // CONTEXT VALUE
+  // ======================================================
 
   const authData = {
     googleSignin,
     registerUser,
     signinUser,
-    updateUserProfile,
     signoutUser,
+    updateUserProfile,
     user,
     loading,
   };
 
-  // Provide all auth functions + user to whole app
+  // provide auth data globally
   return <AuthContext.Provider value={authData}>{children}</AuthContext.Provider>;
 };
 
