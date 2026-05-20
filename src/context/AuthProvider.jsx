@@ -14,13 +14,13 @@ import auth from '../firebase/init.js';
 import logger from '../utilities/logger.js';
 import AuthContext from './AuthContext';
 
+const provider = new GoogleAuthProvider();
+//✅ gmail issue step 1(scope)
+provider.addScope('email');
+
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const provider = new GoogleAuthProvider();
-  //✅ gmail issue step 1(scope)
-  provider.addScope('email');
 
   // 1. Authentication Functions
   const googleSignin = () => {
@@ -48,6 +48,9 @@ const AuthProvider = ({ children }) => {
 
   // 2. Lifecycle Effects
   useEffect(() => {
+    // 👈 track the debounce timer
+    let logoutTimer = null;
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -56,6 +59,10 @@ const AuthProvider = ({ children }) => {
 
       const capturedUserEmail = currentUser?.email || currentUser?.providerData?.[0]?.email;
       if (capturedUserEmail) {
+        // 👈 User is real — cancel any pending logout and log in
+        // 👈 cancel spurious logout
+        clearTimeout(logoutTimer);
+
         const tokenUser = { email: capturedUserEmail };
         axios
           .post(`${BASE_URL}/jwt/login`, tokenUser, {
@@ -68,25 +75,30 @@ const AuthProvider = ({ children }) => {
             logger.log(error);
           });
       } else {
-        axios
-          .post(
-            `${BASE_URL}/jwt/logout`,
-            {},
-            {
-              withCredentials: true,
-            }
-          )
-          .then((res) => {
-            logger.log(res.data);
-          })
-          .catch((error) => {
-            logger.log(error);
-          });
+        // null might be transient — wait 500ms before actually logging out
+        logoutTimer = setTimeout(() => {
+          axios
+            .post(
+              `${BASE_URL}/jwt/logout`,
+              {},
+              {
+                withCredentials: true,
+              }
+            )
+            .then((res) => {
+              logger.log(res.data);
+            })
+            .catch((error) => {
+              logger.log(error);
+            });
+        }, 500);
       }
     });
 
     return () => {
       unsubscribe();
+      // 👈 clean up on unmount too
+      clearTimeout(logoutTimer);
     };
   }, []);
 
