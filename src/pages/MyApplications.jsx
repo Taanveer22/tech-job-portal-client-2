@@ -35,9 +35,7 @@ const MyApplications = () => {
     if (!userEmail) return;
 
     axiosSecure
-      .get(`/applications/me?email=${userEmail}`, {
-        withCredentials: true,
-      })
+      .get(`/applications/me?email=${userEmail}`)
       .then((res) => setMyApps(res.data))
       .catch((err) => logger.log(err.response?.data || err.message));
   }, [user, axiosSecure]);
