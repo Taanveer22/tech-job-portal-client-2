@@ -4,107 +4,50 @@ import { useNavigate } from 'react-router';
 import Swal from 'sweetalert2';
 
 import AuthContext from '../context/AuthContext';
-import logger from '../utilities/logger';
 
-// ======================================================
-// AXIOS INSTANCE
-// ======================================================
-
-// reusable secure axios instance
 const axiosInstance = axios.create({
+  // baseURL: 'http://localhost:5000',
   baseURL: 'https://tech-job-portal-server-2.onrender.com',
-
-  // IMPORTANT:
-  // send cookies automatically
   withCredentials: true,
 });
 
 const useAxiosSecure = () => {
-  // get auth data
-  const { signoutUser, loading } = useContext(AuthContext);
-
-  // navigation
+  const { signoutUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // ======================================================
-    // RESPONSE INTERCEPTOR
-    // ======================================================
-
     const interceptor = axiosInstance.interceptors.response.use(
-      // ======================================================
-      // SUCCESS RESPONSE
-      // ======================================================
-
+      // If request is successful, just return response
       (response) => {
         return response;
       },
 
-      // ======================================================
-      // ERROR RESPONSE
-      // ======================================================
-
+      // If there is an error
       async (error) => {
-        // get response status safely
         const status = error.response?.status;
 
-        // ======================================================
-        // FIX FOR IMMEDIATE SESSION EXPIRED AFTER LOGIN
-        // ======================================================
+        // If unauthorized or forbidden
+        if (status === 401 || status === 403) {
+          await signoutUser();
 
-        /**
-         * VERY IMPORTANT:
-         *
-         * During initial login:
-         *
-         * 1. Firebase logs in
-         * 2. JWT cookie request still processing
-         * 3. Protected API may fire early
-         * 4. Backend returns 401
-         * 5. User gets logged out immediately
-         *
-         * So:
-         * NEVER auto logout while auth loading is true
-         */
+          Swal.fire({
+            icon: 'warning',
+            title: 'Session Expired',
+          });
 
-        if ((status === 401 || status === 403) && !loading) {
-          try {
-            logger.log('Session expired');
-
-            // logout firebase + backend
-            await signoutUser();
-
-            // redirect user
-            navigate('/signin');
-
-            // show alert
-            Swal.fire({
-              icon: 'warning',
-              title: 'Session Expired',
-              text: 'Please login again',
-            });
-          } catch (logoutError) {
-            logger.log(logoutError);
-          }
+          navigate('/signin', { replace: true });
         }
 
-        // continue error
+        // still return error so we can handle it elsewhere if needed
         return Promise.reject(error);
       }
     );
 
-    // ======================================================
-    // CLEANUP
-    // ======================================================
-
+    // cleanup interceptor when component unmounts
     return () => {
       axiosInstance.interceptors.response.eject(interceptor);
     };
-  }, [signoutUser, navigate, loading]);
-
-  // ======================================================
-  // RETURN INSTANCE
-  // ======================================================
+  }, [navigate, signoutUser]);
 
   return axiosInstance;
 };

@@ -1,5 +1,4 @@
 import axios from 'axios';
-
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -12,154 +11,105 @@ import {
 
 import { useEffect, useState } from 'react';
 
-import BASE_URL from '../api/baseUrl.js';
-import auth from '../firebase/init.js';
-import logger from '../utilities/logger.js';
+import BASE_URL from '../api/baseUrl';
+import auth from '../firebase/init';
+import logger from '../utilities/logger';
 import AuthContext from './AuthContext';
 
 // ======================================================
-// GOOGLE PROVIDER SETUP
+// GOOGLE LOGIN PROVIDER SETUP
 // ======================================================
-
-// create google provider
 const provider = new GoogleAuthProvider();
-
-// request email permission
-provider.addScope('email');
+provider.addScope('email'); // ensures email access from Google
 
 const AuthProvider = ({ children }) => {
   // ======================================================
-  // STATES
+  // GLOBAL AUTH STATE
   // ======================================================
-
-  // stores firebase logged in user
   const [user, setUser] = useState(null);
-
-  // loading state for auth checking
   const [loading, setLoading] = useState(true);
 
   // ======================================================
-  // AUTH FUNCTIONS
+  // AUTH FUNCTIONS (USED IN APP)
   // ======================================================
 
-  // google login
-  const googleSignin = () => {
-    return signInWithPopup(auth, provider);
-  };
+  // Google login popup
+  const googleSignin = () => signInWithPopup(auth, provider);
 
-  // email/password register
-  const registerUser = (email, password) => {
-    return createUserWithEmailAndPassword(auth, email, password);
-  };
+  // Create new account
+  const registerUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 
-  // email/password login
-  const signinUser = (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password);
-  };
+  // Login with email/password
+  const signinUser = (email, password) => signInWithEmailAndPassword(auth, email, password);
 
-  // logout user
+  // Logout user (Firebase + backend JWT logout)
   const signoutUser = async () => {
-    try {
-      // remove jwt cookie first
-      await axios.post(
-        `${BASE_URL}/jwt/logout`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
+    // remove JWT from backend
+    await axios.post(`${BASE_URL}/jwt/logout`, {}, { withCredentials: true });
 
-      logger.log('JWT logout success');
-    } catch (error) {
-      logger.log('JWT logout error:', error);
-    }
+    logger.log('JWT logout success');
 
-    // then logout from firebase
+    // remove firebase session
     return signOut(auth);
   };
 
-  // update firebase profile
-  const updateUserProfile = (name, photo) => {
-    return updateProfile(auth.currentUser, {
+  // Update user profile (name + photo)
+  const updateUserProfile = (name, photo) =>
+    updateProfile(auth.currentUser, {
       displayName: name,
       photoURL: photo,
     });
-  };
 
   // ======================================================
-  // FIREBASE AUTH LISTENER
+  // AUTH STATE LISTENER (RUNS ON APP START + LOGIN/LOGOUT)
   // ======================================================
-
   useEffect(() => {
-    // listen for firebase auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(true); // start loading whenever auth changes
+
       try {
-        // start loading
-        setLoading(true);
-
-        // ==================================================
-        // LOGIN CASE
-        // ==================================================
-
-        if (currentUser) {
-          // get user email safely
-          const email = currentUser.email || currentUser?.providerData?.[0]?.email;
-
-          // if email missing stop here
-          if (!email) {
-            setUser(null);
-            setLoading(false);
-            return;
-          }
-
-          // IMPORTANT:
-          // create jwt cookie in backend first
-          await axios.post(
-            `${BASE_URL}/jwt/login`,
-            { email },
-            {
-              withCredentials: true,
-            }
-          );
-
-          // AFTER jwt success save user
-          setUser(currentUser);
-
-          logger.log('JWT login success');
-        }
-
-        // ==================================================
-        // LOGOUT CASE
-        // ==================================================
-        else {
-          // clear user from frontend
+        // If user is logged out
+        if (!currentUser) {
           setUser(null);
-
-          logger.log('User logged out');
+          setLoading(false);
+          return;
         }
-      } catch (error) {
-        // if jwt creation fails
-        logger.log('Auth state error:', error);
 
-        // clear invalid user
-        setUser(null);
+        // Get email safely (Google + email/password both supported)
+        const userEmail = currentUser.email || currentUser?.providerData?.[0]?.email;
+
+        if (!userEmail) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        // ======================================================
+        // SEND EMAIL TO BACKEND → GET JWT COOKIE
+        // (runs every login automatically)
+        // ======================================================
+        await axios.post(`${BASE_URL}/jwt/login`, { userEmail }, { withCredentials: true });
+
+        logger.log('JWT login success');
+
+        // Save user in global state
+        setUser(currentUser);
+      } catch (error) {
+        logger.log('Auth error:', error);
+        setUser(null); // reset user on error
       } finally {
-        // stop loading
-        setLoading(false);
+        setLoading(false); // stop loading
       }
     });
 
-    // cleanup listener
-    return () => {
-      unsubscribe();
-    };
+    // cleanup listener when component unmounts
+    return () => unsubscribe();
   }, []);
 
   // ======================================================
-  // CONTEXT VALUE
+  // PROVIDER VALUE (AVAILABLE TO WHOLE APP)
   // ======================================================
-
-  const authData = {
+  const authInfo = {
     googleSignin,
     registerUser,
     signinUser,
@@ -168,9 +118,7 @@ const AuthProvider = ({ children }) => {
     user,
     loading,
   };
-
-  // provide auth globally
-  return <AuthContext.Provider value={authData}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={authInfo}>{children}</AuthContext.Provider>;
 };
 
 export default AuthProvider;
