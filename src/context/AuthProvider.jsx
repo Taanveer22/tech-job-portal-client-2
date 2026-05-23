@@ -9,7 +9,7 @@ import {
   updateProfile,
 } from 'firebase/auth';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import BASE_URL from '../api/baseUrl';
 import auth from '../firebase/init';
@@ -37,23 +37,29 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // ======================================================
-  // GOOGLE LOGIN — শুধু Firebase
+  // BUG 4 FIX — prevUserRef দিয়ে track করো আগে user ছিল কিনা
+  // page first load এ user=null → আগে logout call যেত → 401 error হতো
+  // এখন শুধু আগে user ছিল তখনই jwtLogout call হবে
+  // ======================================================
+  const prevUserRef = useRef(null);
+
+  // ======================================================
+  // GOOGLE LOGIN
   // ======================================================
   const googleSignin = () => signInWithPopup(auth, provider);
 
   // ======================================================
-  // EMAIL/PASSWORD REGISTER — শুধু Firebase
+  // EMAIL/PASSWORD REGISTER
   // ======================================================
   const registerUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 
   // ======================================================
-  // EMAIL/PASSWORD LOGIN — শুধু Firebase
+  // EMAIL/PASSWORD LOGIN
   // ======================================================
   const signinUser = (email, password) => signInWithEmailAndPassword(auth, email, password);
 
   // ======================================================
-  // LOGOUT — শুধু Firebase
-  // jwtLogout onAuthStateChanged এ হবে automatically
+  // LOGOUT
   // ======================================================
   const signoutUser = () => signOut(auth);
 
@@ -68,38 +74,37 @@ const AuthProvider = ({ children }) => {
 
   // ======================================================
   // AUTH STATE LISTENER
-  // সব JWT কাজ শুধু এখানেই হবে
   // ======================================================
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        // ✅ user আছে — set করো
-        setUser(currentUser);
-
-        // ✅ JWT cookie সেট করো
-        const email = currentUser.email || currentUser.providerData?.[0]?.email;
-
-        try {
+      try {
+        if (currentUser) {
+          const email = currentUser.email || currentUser.providerData?.[0]?.email;
           await jwtLogin(email);
+          setUser(currentUser);
+          // ✅ prevUserRef update করো
+          prevUserRef.current = currentUser;
           logger.log('JWT login success');
-        } catch (err) {
-          logger.log('JWT login failed', err);
+        } else {
+          setUser(null);
+          if (prevUserRef.current) {
+            try {
+              await jwtLogout();
+              logger.log('JWT logout success');
+            } catch (err) {
+              logger.log('JWT logout failed', err);
+            }
+            prevUserRef.current = null;
+          }
         }
-      } else {
-        // ✅ user নেই — clear করো
-        setUser(null);
-
-        // ✅ JWT cookie clear করো
-        try {
-          await jwtLogout();
-          logger.log('JWT logout success');
-        } catch (err) {
-          logger.log('JWT logout failed', err);
+      } catch (err) {
+        logger.log('JWT login failed', err);
+        if (currentUser) {
+          setUser(currentUser);
         }
+      } finally {
+        setLoading(false);
       }
-
-      // ✅ সবশেষে loading false
-      setLoading(false);
     });
 
     return () => unsubscribe();
