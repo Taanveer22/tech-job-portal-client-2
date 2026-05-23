@@ -1,43 +1,60 @@
-import { use, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
 import useAxiosSecure from '../hooks/useAxiosSecure';
+import logger from '../utilities/logger';
 
 const AdminPostedJobs = () => {
-  const { user } = use(AuthContext);
-  // console.log(user);
+  const { user } = useContext(AuthContext);
   const [postedJobs, setPostedJobs] = useState([]);
   const axiosSecure = useAxiosSecure();
 
+  // ======================================================
+  // DELETE HANDLER
+  // ======================================================
   const handleDeletePostedJob = (id) => {
-    // console.log(id);
-    axiosSecure.delete(`/jobs/delete/${id}`).then((res) => {
-      // console.log(res.data);
-      if (res.data.deletedCount > 0) {
-        const remainingJobs = postedJobs.filter((jobItem) => jobItem._id !== id);
-        setPostedJobs(remainingJobs);
-        Swal.fire('Job deleted successfully');
-      }
-    });
+    axiosSecure
+      .delete(`/jobs/delete/${id}`)
+      .then((res) => {
+        if (res.data.deletedCount > 0) {
+          const remainingJobs = postedJobs.filter((jobItem) => jobItem._id !== id);
+          setPostedJobs(remainingJobs);
+          Swal.fire({
+            icon: 'success',
+            title: 'Job deleted successfully',
+          });
+        }
+      })
+      .catch((err) => {
+        logger.log(err.response?.data);
+      });
   };
 
+  // ======================================================
+  // FETCH POSTED JOBS
+  // ======================================================
   useEffect(() => {
-    //✅ gmail issue step 3(read)
     const userEmail = user?.email || user?.providerData?.[0]?.email;
+
     if (!userEmail) return;
-    axiosSecure.get(`/jobs?email=${userEmail}`).then((res) => setPostedJobs(res.data));
-  }, [user, axiosSecure]);
-  //   console.log(postedJobs);
+
+    axiosSecure
+      .get(`/jobs?email=${userEmail}`)
+      .then((res) => setPostedJobs(res.data))
+      .catch((err) => {
+        logger.log(err.response?.data);
+      });
+  }, [user]);
+  // ✅ axiosSecure dependency remoed
 
   return (
     <div className="mb-8 lg:mb-16">
       <h1 className="text-2xl font-semibold text-center mb-4">
-        Total Posted Jobs : {postedJobs.length}
+        Total Posted Jobs: {postedJobs.length}
       </h1>
       <div className="overflow-x-auto">
         <table className="table">
-          {/* head */}
           <thead>
             <tr>
               <th>Serial</th>

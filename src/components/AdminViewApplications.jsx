@@ -5,39 +5,48 @@ import useAxiosSecure from '../hooks/useAxiosSecure';
 
 const AdminViewApplications = () => {
   const [viewApps, setViewApps] = useState([]);
-  // console.log(viewApps);
   const { jobId } = useParams();
-  // console.log(jobId);
   const axiosSecure = useAxiosSecure();
 
   const handleUpdateStatus = (e, id) => {
-    // console.log(e.target.value, id);
-    const data = {
-      status: e.target.value,
-    };
-    axiosSecure.patch(`/applications/admin/status/${id}`, data).then((res) => {
-      // console.log(res.data);
-      if (res.data.modifiedCount > 0) {
-        Swal.fire('Job status updated successfully');
-      }
-    });
+    const data = { status: e.target.value };
+
+    axiosSecure
+      .patch(`/applications/admin/status/${id}`, data)
+      .then((res) => {
+        if (res.data.modifiedCount > 0) {
+          Swal.fire('Job status updated successfully');
+        }
+      })
+      // ✅ error handle করো
+      .catch((err) => {
+        console.log(err.response?.data);
+        Swal.fire('Failed to update status');
+      });
   };
 
   useEffect(() => {
-    axiosSecure.get(`/applications/admin/view/${jobId}`).then((res) => {
-      // console.log(res.data);
-      setViewApps(res.data);
-    });
-  }, [jobId, axiosSecure]);
+    // ✅ jobId না থাকলে call করো না
+    if (!jobId) return;
+
+    axiosSecure
+      .get(`/applications/admin/view/${jobId}`)
+      .then((res) => {
+        setViewApps(res.data);
+      })
+      // ✅ error handle করো
+      .catch((err) => {
+        console.log(err.response?.data);
+      });
+  }, [jobId]); // ✅ axiosSecure dependency সরিয়ে দাও
 
   return (
     <div>
       <h1 className="text-2xl font-semibold text-center mb-4">
-        Total applied candiates : {viewApps.length}
+        Total applied candidates: {viewApps.length}
       </h1>
       <div className="overflow-x-auto">
         <table className="table">
-          {/* head */}
           <thead>
             <tr>
               <th>Serial</th>

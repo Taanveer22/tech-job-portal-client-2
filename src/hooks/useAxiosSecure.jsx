@@ -12,42 +12,40 @@ const axiosInstance = axios.create({
 });
 
 const useAxiosSecure = () => {
-  const { signoutUser } = useContext(AuthContext);
+  const { signoutUser, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
     const interceptor = axiosInstance.interceptors.response.use(
-      // If request is successful, just return response
-      (response) => {
-        return response;
-      },
+      // ✅ success হলে শুধু return করো
+      (response) => response,
 
-      // If there is an error
+      // ❌ error হলে
       async (error) => {
         const status = error.response?.status;
 
-        // If unauthorized or forbidden
-        if (status === 401 || status === 403) {
+        // ✅ FIX: শুধু user logged in থাকলেই logout করো
+        // page load এ 401 আসলে যেন logout না হয়
+        if ((status === 401 || status === 403) && user) {
           await signoutUser();
 
           Swal.fire({
             icon: 'warning',
             title: 'Session Expired',
+            text: 'Please login again',
           });
 
           navigate('/signin', { replace: true });
         }
 
-        // still return error so we can handle it elsewhere if needed
         return Promise.reject(error);
       }
     );
 
-    // cleanup interceptor when component unmounts
     return () => {
       axiosInstance.interceptors.response.eject(interceptor);
     };
-  }, [navigate, signoutUser]);
+  }, [navigate, signoutUser, user]);
 
   return axiosInstance;
 };

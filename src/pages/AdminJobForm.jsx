@@ -1,38 +1,47 @@
-import { use } from 'react';
+import { useContext } from 'react';
 import Swal from 'sweetalert2';
 import AuthContext from '../context/AuthContext';
 import useAxiosSecure from '../hooks/useAxiosSecure';
+import logger from '../utilities/logger';
 
 const AdminJobForm = () => {
-  const { user } = use(AuthContext);
-  // console.log(user);
+  const { user } = useContext(AuthContext);
   const axiosSecure = useAxiosSecure();
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    // special browser data container for forms
+
     const containerFormData = new FormData(e.target);
-    // console.log(containerFormData);
-
-    // normal JavaScript object for logic and APIs
     const realFormData = Object.fromEntries(containerFormData.entries());
-    // console.log(realFormData);
 
-    // destructure real form data and convert to arrary and object
     const { min, max, currency, ...newJob } = realFormData;
-    // console.log(min, max, currency, newJob);
     newJob.salaryRange = { min, max, currency };
     newJob.responsibilities = newJob.responsibilities.split('\n');
     newJob.requirements = newJob.requirements.split('\n');
-    // console.log(newJob);
 
-    // send job data to server
-    axiosSecure.post(`/jobs/add`, newJob).then((res) => {
-      // console.log(res.data);
-      if (res.data.insertedId) {
-        Swal.fire('Add job succesfully');
-      }
-    });
+    // ✅ user check আগে করো
+    if (!user) {
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Login Required',
+        text: 'Please login first',
+      });
+    }
+
+    axiosSecure
+      .post(`/jobs/add`, newJob)
+      .then((res) => {
+        if (res.data.insertedId) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Job Added Successfully',
+          });
+        }
+      })
+      .catch((err) => {
+        logger.log(err.response?.data);
+        // ✅ 401/403 interceptor handle করবে
+      });
   };
 
   return (
@@ -68,7 +77,7 @@ const AdminJobForm = () => {
               <option>Marketing</option>
             </select>
 
-            {/* salary max field */}
+            {/* salary currency field */}
             <label className="label">Salary Currency</label>
             <select name="currency" defaultValue="BDT" className="select">
               <option>BDT</option>
@@ -99,7 +108,7 @@ const AdminJobForm = () => {
             {/* hr name field */}
             <label className="label">HR Name</label>
             <input
-              defaultValue={user?.name}
+              defaultValue={user?.displayName}
               name="hr_name"
               type="text"
               className="input"
@@ -109,7 +118,6 @@ const AdminJobForm = () => {
             {/* hr email field */}
             <label className="label">HR Email</label>
             <input
-              //✅ gmail issue step 2(create)
               defaultValue={user?.email || user?.providerData?.[0]?.email}
               name="hr_email"
               type="email"
@@ -129,7 +137,7 @@ const AdminJobForm = () => {
               placeholder="Give one requirement in a line"
             ></textarea>
 
-            {/* responsibilites field */}
+            {/* responsibilities field */}
             <label className="label">Responsibilities</label>
             <textarea
               name="responsibilities"

@@ -12,23 +12,27 @@ const MyApplications = () => {
   // ======================================================
   // DELETE APPLICATION
   // ======================================================
-
   const handleDeleteApplication = (id) => {
-    axiosSecure.delete(`/applications/me/delete/${id}`).then((res) => {
-      if (res.data.deletedCount > 0) {
-        const remaining = myApps.filter((appItem) => appItem._id !== id);
-
-        setMyApps(remaining);
-
-        Swal.fire('Application deleted done');
-      }
-    });
+    axiosSecure
+      .delete(`/applications/me/delete/${id}`)
+      .then((res) => {
+        if (res.data.deletedCount > 0) {
+          const remaining = myApps.filter((appItem) => appItem._id !== id);
+          setMyApps(remaining);
+          Swal.fire({
+            icon: 'success',
+            title: 'Application deleted successfully',
+          });
+        }
+      })
+      .catch((err) => {
+        logger.log(err.response?.data);
+      });
   };
 
   // ======================================================
   // FETCH APPLICATIONS
   // ======================================================
-
   useEffect(() => {
     const userEmail = user?.email || user?.providerData?.[0]?.email;
 
@@ -38,12 +42,13 @@ const MyApplications = () => {
       .get(`/applications/me?email=${userEmail}`)
       .then((res) => setMyApps(res.data))
       .catch((err) => logger.log(err.response?.data || err.message));
-  }, [user, axiosSecure]);
+  }, [user]);
+  // ✅ axiosSecure dependency removed
 
   return (
     <div className="mb-8 lg:mb-16">
       <h1 className="text-2xl font-semibold text-center mb-4">
-        Total applications : {myApps.length}
+        Total applications: {myApps.length}
       </h1>
 
       <div className="overflow-x-auto">
@@ -73,20 +78,21 @@ const MyApplications = () => {
                   <div className="flex items-center gap-3">
                     <div className="avatar">
                       <div className="mask mask-squircle h-12 w-12">
-                        <img src={appItem?.company_logo} alt="company" />
+                        <img
+                          src={appItem?.company_logo || '../assets/logo.png'}
+                          alt={appItem?.company || 'company'}
+                        />
                       </div>
                     </div>
 
                     <div>
                       <div className="font-bold">{appItem?.company}</div>
-
                       <div className="text-sm opacity-50">{appItem?.location}</div>
                     </div>
                   </div>
                 </td>
 
                 <td>{appItem?.title}</td>
-
                 <td>{appItem?.jobType}</td>
 
                 <th>

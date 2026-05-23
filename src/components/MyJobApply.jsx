@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate, useParams } from 'react-router';
-
 import Swal from 'sweetalert2';
+
 import AuthContext from '../context/AuthContext';
 import useAxiosSecure from '../hooks/useAxiosSecure';
 import logger from '../utilities/logger';
@@ -12,21 +12,30 @@ const MyJobApply = () => {
   const navigate = useNavigate();
   const axiosSecure = useAxiosSecure();
 
-  // ======================================================
-  // APPLY HANDLER
-  // ======================================================
   const handleJobApplicationForm = async (e) => {
     e.preventDefault();
+
+    // ✅  user check
+    if (!user) {
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Login Required',
+        text: 'Please login first',
+      });
+    }
 
     const github = e.target.github.value;
     const linkedin = e.target.linkedin.value;
     const resume = e.target.resume.value;
 
-    const email = user?.email || user?.providerData?.[0]?.email;
+    const email = user.email || user.providerData?.[0]?.email;
 
-    // 🚨 IMPORTANT FIX
     if (!email) {
-      return Swal.fire('Login required');
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Email not found',
+        text: 'Please login again',
+      });
     }
 
     const applicationInfo = {
@@ -41,12 +50,15 @@ const MyJobApply = () => {
       const res = await axiosSecure.post('/applications/me/apply', applicationInfo);
 
       if (res.data.insertedId) {
-        Swal.fire('Job Applied Successfully');
+        Swal.fire({
+          icon: 'success',
+          title: 'Job Applied Successfully',
+        });
         navigate('/myApplications', { replace: true });
       }
     } catch (error) {
       logger.log(error.response?.data);
-      Swal.fire('Unauthorized or Session Expired');
+      // ✅ interceptor already handle করবে 401/403
     }
   };
 
@@ -54,16 +66,13 @@ const MyJobApply = () => {
     <div className="mb-8 lg:mb-16">
       <div className="hero bg-base-200 min-h-screen">
         <div className="hero-content flex-col lg:flex-row-reverse">
-          {/* TITLE */}
           <div className="text-center lg:text-left">
             <h1 className="text-5xl font-bold">Apply now!</h1>
-
             <p className="py-6">
               Submit your GitHub, LinkedIn and Resume links to apply for this job.
             </p>
           </div>
 
-          {/* FORM CARD */}
           <div className="card bg-base-100 w-full max-w-sm shadow-2xl">
             <form onSubmit={handleJobApplicationForm} className="card-body">
               {/* GITHUB */}
@@ -71,7 +80,6 @@ const MyJobApply = () => {
                 <label className="label">
                   <span className="label-text">GitHub</span>
                 </label>
-
                 <input
                   name="github"
                   type="url"
@@ -86,7 +94,6 @@ const MyJobApply = () => {
                 <label className="label">
                   <span className="label-text">LinkedIn</span>
                 </label>
-
                 <input
                   name="linkedin"
                   type="url"
@@ -101,7 +108,6 @@ const MyJobApply = () => {
                 <label className="label">
                   <span className="label-text">Resume</span>
                 </label>
-
                 <input
                   name="resume"
                   type="url"
@@ -111,7 +117,7 @@ const MyJobApply = () => {
                 />
               </div>
 
-              {/* SUBMIT BUTTON */}
+              {/* SUBMIT */}
               <div className="form-control mt-6">
                 <button className="btn btn-neutral">Apply Now</button>
               </div>

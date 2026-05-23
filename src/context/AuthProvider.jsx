@@ -37,44 +37,25 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // ======================================================
-  // GOOGLE LOGIN → JWT login ও করবে
+  // GOOGLE LOGIN — শুধু Firebase
   // ======================================================
-  const googleSignin = async () => {
-    const result = await signInWithPopup(auth, provider);
-    const email = result.user.email || result.user.providerData?.[0]?.email;
-    await jwtLogin(email);
-    logger.log('JWT login success (Google)');
-    return result;
-  };
+  const googleSignin = () => signInWithPopup(auth, provider);
 
   // ======================================================
-  // EMAIL/PASSWORD REGISTER → JWT login ও করবে
+  // EMAIL/PASSWORD REGISTER — শুধু Firebase
   // ======================================================
-  const registerUser = async (email, password) => {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    await jwtLogin(email);
-    logger.log('JWT login success (Register)');
-    return result;
-  };
+  const registerUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 
   // ======================================================
-  // EMAIL/PASSWORD LOGIN → JWT login ও করবে
+  // EMAIL/PASSWORD LOGIN — শুধু Firebase
   // ======================================================
-  const signinUser = async (email, password) => {
-    const result = await signInWithEmailAndPassword(auth, email, password);
-    await jwtLogin(email);
-    logger.log('JWT login success (Email)');
-    return result;
-  };
+  const signinUser = (email, password) => signInWithEmailAndPassword(auth, email, password);
 
   // ======================================================
-  // LOGOUT → JWT logout ও করবে
+  // LOGOUT — শুধু Firebase
+  // jwtLogout onAuthStateChanged এ হবে automatically
   // ======================================================
-  const signoutUser = async () => {
-    await jwtLogout();
-    logger.log('JWT logout success');
-    return signOut(auth);
-  };
+  const signoutUser = () => signOut(auth);
 
   // ======================================================
   // UPDATE PROFILE
@@ -86,11 +67,38 @@ const AuthProvider = ({ children }) => {
     });
 
   // ======================================================
-  // AUTH STATE LISTENER — শুধু user set করবে, JWT নয়
+  // AUTH STATE LISTENER
+  // সব JWT কাজ শুধু এখানেই হবে
   // ======================================================
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser ?? null);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        // ✅ user আছে — set করো
+        setUser(currentUser);
+
+        // ✅ JWT cookie সেট করো
+        const email = currentUser.email || currentUser.providerData?.[0]?.email;
+
+        try {
+          await jwtLogin(email);
+          logger.log('JWT login success');
+        } catch (err) {
+          logger.log('JWT login failed', err);
+        }
+      } else {
+        // ✅ user নেই — clear করো
+        setUser(null);
+
+        // ✅ JWT cookie clear করো
+        try {
+          await jwtLogout();
+          logger.log('JWT logout success');
+        } catch (err) {
+          logger.log('JWT logout failed', err);
+        }
+      }
+
+      // ✅ সবশেষে loading false
       setLoading(false);
     });
 
